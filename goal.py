@@ -24,9 +24,10 @@ This file contains the hierarchy of Goal classes.
 from __future__ import annotations
 import math
 import random
-from typing import List, Tuple
+from typing import List, Tuple, Any
 from block import Block
 from settings import colour_name, COLOUR_LIST
+
 
 def generate_goals(num_goals: int) -> List[Goal]:
     """Return a randomly generated list of goals with length num_goals.
@@ -43,12 +44,10 @@ def generate_goals(num_goals: int) -> List[Goal]:
     return [BlobGoal(_random_item(COLOUR_LIST)) for i in range(num_goals)]
 
 
-def _random_item(lst):
+def _random_item(lst: List[Any]) -> Any:
     """Returns a randomly selected item from lst"""
     return lst[random.randint(0, len(lst) - 1)]
 
-
-# I think this method works but one of their test cases is str8 up wrong
 def _flatten(block: Block) -> List[List[Tuple[int, int, int]]]:
     """Return a two-dimensional list representing <block> as rows and columns of
     unit cells.
@@ -70,19 +69,20 @@ def _flatten(block: Block) -> List[List[Tuple[int, int, int]]]:
 
 
 def _merge(block_lists: List[List[int]]) -> List[int]:
-    """Merges 4 nxn lists into one 2nx2n list. Order of sublists in <block_lists> is (Top-Right, TL, BL, BR)"""
-    # A B C D represents TL, TR, BL, BR sections of block
-    B, A, C, D = [[y[:] for y in x] for x in block_lists]    # Deep copy needed
-    for i in range(len(A)):
-        A[i] += B[i]
-        C[i] += D[i]
-    return A + C
+    """Merges 4 nxn lists into one 2nx2n list. Order of sublists in <block_lists> is (Top-Right, TL, BL, BR)
+    A B C D represents TL, TR, BL, BR sections of block"""
+    B, A, C, D = [[y[:] for y in x] for x in block_lists]  # Deep copy needed
+    n = len(A)
+    return [A[i] + C[i] for i in range(n)] + [B[i] + D[i] for i in range(n)]
 
+# TODO: Delete after testing
 def _2d_print(lst):
+    """Prints 2d-array in readable manner, used for testing"""
     print("[")
     for x in lst:
         print(str(x) + ', ')
     print("]")
+
 
 class Goal:
     """A player goal in the game of Blocky.
@@ -122,6 +122,7 @@ class PerimeterGoal(Goal):
         for i in range(len(grid)):
             counter += (grid[0][i] == col) + (grid[-1][i] == col) + (grid[i][0] == col) + (grid[i][-1] == col)
         return counter
+
     def description(self) -> str:
         # return "The player must aim to put the most possible units of a given colour c on the outer perimeter of the " \
         "board. The player’s score is the total number of unit cells of colour c that are on the perimeter. " \
