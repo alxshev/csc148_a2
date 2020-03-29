@@ -175,10 +175,8 @@ class Block:
         The positions are returned in this order: upper-right child, upper-left
         child, lower-left child, lower-right child.
         """
-        x = self.position[0]
-        y = self.position[1]
+        x, y = self.position
         size = self._child_size()
-
         return [(x + size, y), (x, y), (x, y + size), (x + size, y + size)]
 
     def _update_children_positions(self, position: Tuple[int, int]) -> None:

@@ -46,9 +46,13 @@ def create_players(num_human: int, num_random: int, smart_players: List[int]) \
     objects as the length of <smart_players>. The difficulty levels in
     <smart_players> should be applied to each SmartPlayer object, in order.
     """
-    # TODO: Implement Me
-    goals = generate_goals(1)  # FIXME
-    return [HumanPlayer(0, goals[0])]  # FIXME
+    n = num_human + num_random + len(smart_players)
+    goals = generate_goals(n)
+    offset_smarts = num_human + num_random
+    humans = [HumanPlayer(i, goals[i]) for i in range(num_human)]
+    randoms = [RandomPlayer(i, goals[i]) for i in range(num_human, offset_smarts)]
+    smarts = [SmartPlayer(i, goals[i], smart_players[i - offset_smarts]) for i in range(offset_smarts, n)]
+    return humans + randoms + smarts
 
 
 def _get_block(block: Block, location: Tuple[int, int], level: int) -> \
@@ -69,8 +73,18 @@ def _get_block(block: Block, location: Tuple[int, int], level: int) -> \
     Preconditions:
         - 0 <= level <= max_depth
     """
-    # TODO: Implement me
-    return None  # FIXME
+    if not block.children or block.level == level:
+        return block
+    for child in block.children:
+        if _in_range(location, child.position, child.size):
+            # print(child.position)
+            return _get_block(child, location, level)
+
+
+def _in_range(pos, square, size):
+    x, y = pos
+    a, b = square
+    return (a <= x < a + size) and (b <= y < b + size)
 
 
 class Player:
@@ -211,7 +225,7 @@ class RandomPlayer(Player):
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             self._proceed = True
 
-    def generate_move(self, board: Block) ->\
+    def generate_move(self, board: Block) -> \
             Optional[Tuple[str, Optional[int], Block]]:
         """Return a valid, randomly generated move.
 
@@ -247,7 +261,7 @@ class SmartPlayer(Player):
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             self._proceed = True
 
-    def generate_move(self, board: Block) ->\
+    def generate_move(self, board: Block) -> \
             Optional[Tuple[str, Optional[int], Block]]:
         """Return a valid move by assessing multiple valid moves and choosing
         the move that results in the highest score for this player's goal (i.e.,
