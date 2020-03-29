@@ -283,7 +283,11 @@ class TestPlayer:
         assert _get_block(board_16x16, top_right, 2) == \
             board_16x16.children[0].children[0]
 
-
+def _2d_print(lst):
+    print("[")
+    for x in lst:
+        print(str(x) + ', ')
+    print("]")
 class TestGoal:
     """A collection of methods for testing the sub-classes of Goal.
 
@@ -295,11 +299,19 @@ class TestGoal:
         of colours.
         """
         result = _flatten(board_16x16)
+        print("children: ")
+        print([child for child in board_16x16.children])
+        print(board_16x16.children[0].children[0].colour)
+        print("Flattened:")
+        _2d_print(result)
+
+        print("\n Correct:")
+        _2d_print(flattened_board_16x16)
 
         # We are expected a "square" 2D list
         for sublist in result:
             assert len(result) == len(sublist)
-
+        print(result == flattened_board_16x16)
         assert result == flattened_board_16x16
 
     def test_blob_goal(self, board_16x16) -> None:

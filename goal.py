@@ -28,7 +28,6 @@ from typing import List, Tuple
 from block import Block
 from settings import colour_name, COLOUR_LIST
 
-
 def generate_goals(num_goals: int) -> List[Goal]:
     """Return a randomly generated list of goals with length num_goals.
 
@@ -49,6 +48,7 @@ def _random_item(lst):
     return lst[random.randint(0, len(lst) - 1)]
 
 
+# I think this method works but one of their test cases is str8 up wrong
 def _flatten(block: Block) -> List[List[Tuple[int, int, int]]]:
     """Return a two-dimensional list representing <block> as rows and columns of
     unit cells.
@@ -63,9 +63,26 @@ def _flatten(block: Block) -> List[List[Tuple[int, int, int]]]:
 
     L[0][0] represents the unit cell in the upper left corner of the Block.
     """
-    # TODO: Implement me
-    return []  # FIXME
+    d = 2 ** (block.max_depth - block.level)
+    if not block.children:
+        return [[block.colour] * d] * d
+    return _merge([_flatten(c) for c in block.children])
 
+
+def _merge(block_lists: List[List[int]]) -> List[int]:
+    """Merges 4 nxn lists into one 2nx2n list. Order of sublists in <block_lists> is (Top-Right, TL, BL, BR)"""
+    # A B C D represents TL, TR, BL, BR sections of block
+    B, A, C, D = [[y[:] for y in x] for x in block_lists]    # Deep copy needed
+    for i in range(len(A)):
+        A[i] += B[i]
+        C[i] += D[i]
+    return A + C
+
+def _2d_print(lst):
+    print("[")
+    for x in lst:
+        print(str(x) + ', ')
+    print("]")
 
 class Goal:
     """A player goal in the game of Blocky.
@@ -99,14 +116,18 @@ class Goal:
 
 class PerimeterGoal(Goal):
     def score(self, board: Block) -> int:
-        # TODO: Implement me
-        return 148  # FIXME
-
+        grid = _flatten(board)
+        col = self.colour
+        counter = 0
+        for i in range(len(grid)):
+            counter += (grid[0][i] == col) + (grid[-1][i] == col) + (grid[i][0] == col) + (grid[i][-1] == col)
+        return counter
     def description(self) -> str:
         # return "The player must aim to put the most possible units of a given colour c on the outer perimeter of the " \
         "board. The player’s score is the total number of unit cells of colour c that are on the perimeter. " \
         "There is a premium on corner cells: they count twice towards the score. "
         return "Perimeter Goal"
+
 
 class BlobGoal(Goal):
     def score(self, board: Block) -> int:
