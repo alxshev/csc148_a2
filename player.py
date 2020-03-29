@@ -81,8 +81,11 @@ def _get_block(block: Block, location: Tuple[int, int], level: int) -> \
             return _get_block(child, location, level)
 
 
-def _in_range(pos, square, size):
+def _in_range(pos: Tuple[int, int], square: Tuple[int, int], size: int) -> bool:
+    """Returns whether <pos>=(x,y) is in the square created by going <size> units down from <square>=(a,b)"""
     x, y = pos
+    print(square)
+    # TODO: Sometimes the line below throws an error, saying "too many values to unpack". Need to find out why
     a, b = square
     return (a <= x < a + size) and (b <= y < b + size)
 

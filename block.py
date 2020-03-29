@@ -186,8 +186,9 @@ class Block:
         <position> is the (x, y) coordinates of the upper-left corner of this
         Block.
         """
-        # TODO: Implement me
-        return  # FIXME
+        child_positions = self._children_positions()
+        for i in range(len(self.children)):
+            self.children[i].position = child_positions[i]
 
     def smashable(self) -> bool:
         """Return True iff this block can be smashed.
@@ -198,6 +199,7 @@ class Block:
         return self.level != self.max_depth and len(self.children) == 0
 
     def smash(self) -> bool:
+        # TODO: Verify I wrote this method correctly. There was some random number weirdness they wanted us to do, not sure I did it right
         """Sub-divide this block so that it has four randomly generated
         children.
 
@@ -206,15 +208,23 @@ class Block:
         
         Return True iff the smash was performed.
         """
-        if self.smashable() and random.randint(0, 1) < math.exp(-.25 * self.level):
-            # The children are stored in this order: upper - right child, upper - left child, lower - left child, lower - right child.
-            sz = self._child_size()
-            positions = [(sz, 0), (0, 0), (0, sz), (sz, sz)]
-            for p in positions:
-                self.children.append(Block(self.position + p, self._child_size(), self._random_colour(), self.level + 1, self.max_depth))
-            self.colour = None
-        else:
-            self.colour = self._random_colour()
+        if not self.smashable():
+            return
+
+        # The children are stored in this order: upper - right child, upper - left child, lower - left child, lower - right child.
+        sz = self._child_size()
+        positions = [(sz, 0), (0, 0), (0, sz), (sz, sz)]
+        for p in positions:
+            child = Block(self.position + p, self._child_size(), self._random_colour(), self.level + 1, self.max_depth)
+            self.children.append(child)
+        self.colour = None
+
+        # Smash the children
+        for child in self.children:
+            if random.randint(0, 1) < math.exp(-.25 * self.level):
+                child.smash()
+            else:
+                child.colour = child._random_colour()
 
     # TODO:  IMPORTANT: I imported settings, although the code says not to. But how else can we do it??
     def _random_colour(self):
