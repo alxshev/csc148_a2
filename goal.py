@@ -48,6 +48,7 @@ def _random_item(lst: List[Any]) -> Any:
     """Returns a randomly selected item from lst"""
     return lst[random.randint(0, len(lst) - 1)]
 
+
 def _flatten(block: Block) -> List[List[Tuple[int, int, int]]]:
     """Return a two-dimensional list representing <block> as rows and columns of
     unit cells.
@@ -74,6 +75,7 @@ def _merge(block_lists: List[List[int]]) -> List[int]:
     B, A, C, D = block_lists
     n = len(A)
     return [A[i] + C[i] for i in range(n)] + [B[i] + D[i] for i in range(n)]
+
 
 # TODO: Delete after testing
 def _2d_print(lst):
@@ -132,8 +134,10 @@ class PerimeterGoal(Goal):
 
 class BlobGoal(Goal):
     def score(self, board: Block) -> int:
-        # TODO: Implement me
-        return 148  # FIXME
+        bd = _flatten(board)
+        d = len(bd)
+        visited = [[-1 for i in range(d)] for j in range(d)]
+        return max(self._undiscovered_blob_size((i, j), bd, visited) for i in range(d) for j in range(d))
 
     def _undiscovered_blob_size(self, pos: Tuple[int, int],
                                 board: List[List[Tuple[int, int, int]]],
@@ -155,8 +159,13 @@ class BlobGoal(Goal):
         Update <visited> so that all cells that are visited are marked with
         either 0 or 1.
         """
-        # TODO: Implement me
-        pass  # FIXME
+        d = len(board)
+        i, j = pos
+        if not (0 <= i < d and 0 <= j < d) or visited[i][j] != -1:
+            return 0
+        visited[i][j] = int(board[i][j] == self.colour)
+        next_steps = [(i + 1, j), (i - 1, j), (i, j + 1), (i, j - 1)]
+        return 0 if visited[i][j] == 0 else 1 + sum(self._undiscovered_blob_size(x, board, visited) for x in next_steps)
 
     def description(self) -> str:
         # return "The player must aim for the largest “blob” of a given colour c. A blob is a group of connected blocks " \
