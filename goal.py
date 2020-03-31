@@ -67,7 +67,8 @@ def _flatten(block: Block) -> List[List[Tuple[int, int, int]]]:
 
 
 def _merge(block_lists: List[List[int]]) -> List[int]:
-    """Merges 4 nxn lists into one 2nx2n list. Order of sublists in <block_lists> is (Top-Right, TL, BL, BR)
+    """Merges 4 nxn lists into one 2nx2n list. Order of sublists in
+    <block_lists> is (Top-Right, TL, BL, BR)
     A B C D represents TL, TR, BL, BR sections of block"""
     B, A, C, D = block_lists
     n = len(A)

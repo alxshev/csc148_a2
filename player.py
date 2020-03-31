@@ -226,6 +226,8 @@ class RandomPlayer(Player):
     # _proceed:
     #   True when the player should make a move, False when the player should
     #   wait.
+    id: int
+    goal: Goal
     _proceed: bool
 
     def __init__(self, player_id: int, goal: Goal) -> None:
@@ -250,21 +252,64 @@ class RandomPlayer(Player):
         """
         if not self._proceed:
             return None  # Do not remove
-        # TODO: Implement Me
-        b2 = board.create_copy()
-        self._proceed = False  # Must set to False before returning!
-        return None  # FIXME
+        if board is None:
+            return None
+        # Board is okay to be analyzed
+        # s0 horiz swap, s1 is vert swap, r1 is cw rot, r3 is ccw rot
+        mov_lst = [SMASH, SWAP_HORIZONTAL,SWAP_VERTICAL,
+                   ROTATE_COUNTER_CLOCKWISE, ROTATE_CLOCKWISE,
+                   PAINT, COMBINE]
+        # While there is still something left to analyze
+        while len(mov_lst) != 0:
+            rnd_mov = random.choice(mov_lst)
+            cp = board.create_copy()  # To not mutate original board
+            if rnd_mov == SMASH:
+                if cp.smashable():
+                    self._proceed = False
+                    return _create_move(SMASH, board)
+                else:
+                    mov_lst.remove(SMASH)
+            elif rnd_mov in [SWAP_HORIZONTAL, SWAP_VERTICAL,
+                             ROTATE_COUNTER_CLOCKWISE, ROTATE_CLOCKWISE]:
+                if len(cp.children) != 0:
+                    self._proceed = False
+                    return _create_move(rnd_mov, board)
+                else:
+                    mov_lst.remove(rnd_mov)
+            elif rnd_mov == COMBINE:
+                if cp.combine():
+                    self._proceed = False
+                    return _create_move(COMBINE, board)
+                else:
+                    mov_lst.remove(rnd_mov)
+            else:
+                if cp.paint(self.goal.colour):
+                    self._proceed = False
+                    return _create_move(PAINT, board)
+                else:
+                    mov_lst.remove(rnd_mov)
 
 
 class SmartPlayer(Player):
+    """ A Smart Player.
+    === Public Attributes ===
+    id:
+    This player's number.
+    goal:
+    This player's assigned goal for the game.
+    """
     # === Private Attributes ===
     # _proceed:
     #   True when the player should make a move, False when the player should
     #   wait.
+    player_id: int
+    goal: Goal
     _proceed: bool
+    difficulty: int
 
     def __init__(self, player_id: int, goal: Goal, difficulty: int) -> None:
-        # TODO: Implement Me
+        Player.__init__(self, player_id, goal)
+
         self._proceed = False
 
     def get_selected_block(self, board: Block) -> Optional[Block]:
@@ -288,11 +333,72 @@ class SmartPlayer(Player):
         """
         if not self._proceed:
             return None  # Do not remove
-
-        # TODO: Implement Me
-
-        self._proceed = False  # Must set to False before returning!
-        return None  # FIXME
+        if board is None:
+            return None
+        # Board is okay to be analyzed
+        mov_lst = [SMASH, SWAP_HORIZONTAL, SWAP_VERTICAL,
+                   ROTATE_COUNTER_CLOCKWISE, ROTATE_CLOCKWISE,
+                   PAINT, COMBINE]
+        valid_movs = []  # Contains tuple (move, score)
+        # find list of valid moves and compute their score
+        while len(mov_lst) != 0:
+            rnd_mov = random.choice(mov_lst)
+            cp = board.create_copy()  # To not mutate original board
+            if rnd_mov == SMASH:
+                if cp.smashable():
+                    cp.smash()
+                    valid_movs.append((SMASH, self.goal.score(cp)))
+                    mov_lst.remove(SMASH)
+                else:
+                    mov_lst.remove(SMASH)
+            elif rnd_mov in [SWAP_HORIZONTAL, SWAP_VERTICAL,
+                             ROTATE_COUNTER_CLOCKWISE, ROTATE_CLOCKWISE]:
+                if len(cp.children) != 0:
+                    if rnd_mov == SWAP_HORIZONTAL:
+                        cp.swap(0)
+                        valid_movs.append((SWAP_HORIZONTAL,
+                                          self.goal.score(cp)))
+                        mov_lst.remove(SWAP_HORIZONTAL)
+                    elif rnd_mov == SWAP_VERTICAL:
+                        cp.swap(1)
+                        valid_movs.append((SWAP_VERTICAL,
+                                          self.goal.score(cp)))
+                        mov_lst.remove(SWAP_VERTICAL)
+                    elif rnd_mov == ROTATE_CLOCKWISE:
+                        cp.rotate(1)
+                        valid_movs.append((ROTATE_CLOCKWISE,
+                                          self.goal.score(cp)))
+                        mov_lst.remove(ROTATE_CLOCKWISE)
+                    else:
+                        cp.rotate(3)
+                        valid_movs.append((ROTATE_COUNTER_CLOCKWISE,
+                                           self.goal.score(cp)))
+                        mov_lst.remove(ROTATE_COUNTER_CLOCKWISE)
+                else:
+                    mov_lst.remove(rnd_mov)
+            elif rnd_mov == COMBINE:
+                if cp.combine():
+                    valid_movs.append((COMBINE, self.goal.score(cp)))
+                    mov_lst.remove(COMBINE)
+                else:
+                    mov_lst.remove(rnd_mov)
+            else:
+                if cp.paint(self.goal.colour):
+                    valid_movs.append((PAINT, self.goal.score(cp)))
+                    mov_lst.remove(PAINT)
+                else:
+                    mov_lst.remove(rnd_mov)
+        # Pick max score
+        if len(valid_movs) != 0:
+            max_score = 0
+            ind = 0
+            for i in range(len(valid_movs)):
+                if valid_movs[i][1] > max_score:
+                    ind = i
+                    max_score = valid_movs[i][1]
+            if self.goal.score(board) < max_score:
+                self._proceed = False
+                return _create_move(valid_movs[ind][0], board)
 
 
 if __name__ == '__main__':

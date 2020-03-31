@@ -328,7 +328,7 @@ class Block:
             cols_lst = [c.colour for c in self.children]
             cols = set(cols_lst)
             # No majority colour
-            if len(cols) == (4 or 2):
+            if len(cols) == 4 or len(cols) == 2:
                 return False
             else:
                 self.colour = max(cols, key=cols_lst.count)
