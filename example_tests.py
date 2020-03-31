@@ -299,6 +299,7 @@ class TestGoal:
         of colours.
         """
         result = _flatten(board_16x16)
+        board_16x16.children[0].children[0].colour = ()
         print("children: ")
         print([child for child in board_16x16.children])
         print(board_16x16.children[0].children[0].colour)

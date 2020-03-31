@@ -74,16 +74,6 @@ def _merge(block_lists: List[List[int]]) -> List[int]:
     n = len(A)
     return [A[i] + C[i] for i in range(n)] + [B[i] + D[i] for i in range(n)]
 
-
-# TODO: Delete after testing
-def _2d_print(lst):
-    """Prints 2d-array in readable manner, used for testing"""
-    print("[")
-    for x in lst:
-        print(str(x) + ', ')
-    print("]")
-
-
 class Goal:
     """A player goal in the game of Blocky.
 

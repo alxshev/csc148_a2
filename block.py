@@ -203,7 +203,7 @@ class Block:
         A block can be smashed if it has no children and its level is not at
         max_depth.
         """
-        return self.level != self.max_depth and len(self.children) == 0
+        return self.level != self.max_depth and not self.children
 
     def smash(self) -> bool:
         # TODO: Check
@@ -234,6 +234,7 @@ class Block:
                     child.smash()
             return True
         else:
+            self.colour = random.choice(COLOUR_LIST)
             return False
 
     def swap(self, direction: int) -> bool:
