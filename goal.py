@@ -39,14 +39,11 @@ def generate_goals(num_goals: int) -> List[Goal]:
     Precondition:
         - num_goals <= len(COLOUR_LIST)
     """
+    # Assures independent colours chosen
+    cols = random.sample(COLOUR_LIST, num_goals)
     if random.randint(0, 1) > .5:
-        return [PerimeterGoal(_random_item(COLOUR_LIST)) for i in range(num_goals)]
-    return [BlobGoal(_random_item(COLOUR_LIST)) for i in range(num_goals)]
-
-
-def _random_item(lst: List[Any]) -> Any:
-    """Returns a randomly selected item from lst"""
-    return lst[random.randint(0, len(lst) - 1)]
+        return [PerimeterGoal(random.choice(col)) for col in cols]
+    return [BlobGoal(random.choice(col)) for col in cols]
 
 
 def _flatten(block: Block) -> List[List[Tuple[int, int, int]]]:
@@ -126,10 +123,8 @@ class PerimeterGoal(Goal):
         return counter
 
     def description(self) -> str:
-        # return "The player must aim to put the most possible units of a given colour c on the outer perimeter of the " \
-        "board. The player’s score is the total number of unit cells of colour c that are on the perimeter. " \
-        "There is a premium on corner cells: they count twice towards the score. "
-        return "Perimeter Goal"
+        """Return a description of perimeter goal."""
+        return "Perimeter: put as many of your colour on the perimeter!"
 
 
 class BlobGoal(Goal):
@@ -168,10 +163,8 @@ class BlobGoal(Goal):
         return 0 if visited[i][j] == 0 else 1 + sum(self._undiscovered_blob_size(x, board, visited) for x in next_steps)
 
     def description(self) -> str:
-        # return "The player must aim for the largest “blob” of a given colour c. A blob is a group of connected blocks " \
-        "with the same colour. Two blocks are connected if their sides touch; touching corners doesn’t count. " \
-        "The player’s score is the number of unit cells in the largest blob of colour c. "
-        return "Blob Goal"
+        """return a description of blob goal."""
+        return "Blob Goal: aim for largest blob of your given colour!"
 
 
 if __name__ == '__main__':

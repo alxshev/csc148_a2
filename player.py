@@ -50,9 +50,10 @@ def create_players(num_human: int, num_random: int, smart_players: List[int]) \
     goals = generate_goals(n)
     offset_smarts = num_human + num_random
     humans = [HumanPlayer(i, goals[i]) for i in range(num_human)]
-    randoms = [RandomPlayer(i, goals[i]) for i in range(num_human, offset_smarts)]
-    smarts = [SmartPlayer(i, goals[i], smart_players[i - offset_smarts]) for i in range(offset_smarts, n)]
-    return humans + randoms + smarts
+    rands = [RandomPlayer(i, goals[i]) for i in range(num_human, offset_smarts)]
+    smarts = [SmartPlayer(i, goals[i], smart_players[i - offset_smarts]) for i
+              in range(offset_smarts, n)]
+    return humans + rands + smarts
 
 
 def _get_block(block: Block, location: Tuple[int, int], level: int) -> \
@@ -73,21 +74,25 @@ def _get_block(block: Block, location: Tuple[int, int], level: int) -> \
     Preconditions:
         - 0 <= level <= max_depth
     """
+    # base case: unit block or a level block
     if not block.children or block.level == level:
-        return block
-    for child in block.children:
-        if _in_range(location, child.position, child.size):
-            # print(child.position)
-            return _get_block(child, location, level)
+        if _in_range(location, block):
+            return block
+        else:
+            return None
+    else:
+        for child in block.children:
+            if _in_range(location, child):
+                return _get_block(child, location, level)
 
 
-def _in_range(pos: Tuple[int, int], square: Tuple[int, int], size: int) -> bool:
-    """Returns whether <pos>=(x,y) is in the square created by going <size> units down from <square>=(a,b)"""
+def _in_range(pos: Tuple[int, int], block: Block) -> bool:
+    """Returns whether <pos>=(x,y) is in this block."""
     x, y = pos
-    print(square)
-    # TODO: Sometimes the line below throws an error, saying "too many values to unpack". Need to find out why
-    a, b = square
-    return (a <= x < a + size) and (b <= y < b + size)
+    b_pos_x, b_pos_y = block.position
+    b_pos_x_max = b_pos_x + block.size
+    b_pos_y_max = b_pos_y + block.size
+    return (b_pos_x <= x < b_pos_x_max) and (b_pos_y <= y < b_pos_y_max)
 
 
 class Player:
@@ -142,8 +147,7 @@ def _create_move(action: Tuple[str, Optional[int]], block: Block) -> \
 
 
 class HumanPlayer(Player):
-    """A human player.
-    """
+    """A human player."""
     # === Private Attributes ===
     # _level:
     #     The level of the Block that the user selected most recently.
@@ -211,6 +215,13 @@ class HumanPlayer(Player):
 
 
 class RandomPlayer(Player):
+    """ A Random Player.
+    === Public Attributes ===
+    id:
+    This player's number.
+    goal:
+    This player's assigned goal for the game.
+    """
     # === Private Attributes ===
     # _proceed:
     #   True when the player should make a move, False when the player should
@@ -218,7 +229,7 @@ class RandomPlayer(Player):
     _proceed: bool
 
     def __init__(self, player_id: int, goal: Goal) -> None:
-        # TODO: Implement Me
+        Player.__init__(self, player_id, goal)
         self._proceed = False
 
     def get_selected_block(self, board: Block) -> Optional[Block]:
@@ -239,9 +250,8 @@ class RandomPlayer(Player):
         """
         if not self._proceed:
             return None  # Do not remove
-
         # TODO: Implement Me
-
+        b2 = board.create_copy()
         self._proceed = False  # Must set to False before returning!
         return None  # FIXME
 

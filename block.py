@@ -93,6 +93,7 @@ class Block:
         - its colour is not None.
     - level <= max_depth
     """
+    # Public attribute types
     position: Tuple[int, int]
     size: int
     colour: Optional[Tuple[int, int, int]]
@@ -186,9 +187,15 @@ class Block:
         <position> is the (x, y) coordinates of the upper-left corner of this
         Block.
         """
-        child_positions = self._children_positions()
-        for i in range(len(self.children)):
-            self.children[i].position = child_positions[i]
+        # Base case: Unit cell
+        if not self.children:
+            self.position = position
+        # Recursive step: Block with children
+        else:
+            self.position = position
+            child_pos = self._children_positions()
+            for i in range(len(self.children)):
+                self.children[i]._update_children_positions(child_pos[i])
 
     def smashable(self) -> bool:
         """Return True iff this block can be smashed.
@@ -199,63 +206,94 @@ class Block:
         return self.level != self.max_depth and len(self.children) == 0
 
     def smash(self) -> bool:
-        # TODO: Verify I wrote this method correctly. There was some random number weirdness they wanted us to do, not sure I did it right
+        # TODO: Check
         """Sub-divide this block so that it has four randomly generated
         children.
 
         If this Block's level is <max_depth>, do nothing. If this block has
         children, do nothing.
-        
+
         Return True iff the smash was performed.
         """
         if not self.smashable():
-            return
-
-        # The children are stored in this order: upper - right child, upper - left child, lower - left child, lower - right child.
-        sz = self._child_size()
-        positions = [(sz, 0), (0, 0), (0, sz), (sz, sz)]
-        for p in positions:
-            child = Block(self.position + p, self._child_size(), self._random_colour(), self.level + 1, self.max_depth)
-            self.children.append(child)
-        self.colour = None
-
-        # Smash the children
-        for child in self.children:
-            if random.randint(0, 1) < math.exp(-.25 * self.level):
-                child.smash()
-            else:
-                child.colour = child._random_colour()
-
-    # TODO:  IMPORTANT: I imported settings, although the code says not to. But how else can we do it??
-    def _random_colour(self):
-        num_colours = len(settings.COLOUR_LIST)
-        return settings.COLOUR_LIST[random.randint(0, num_colours - 1)]
+            return False
+        # The block can be smashed
+        rand_num = random.random()
+        # If you succeed in smashing, check the recursion step
+        if rand_num < math.exp(-0.25 * self.level):
+            child_pos = self._children_positions()
+            self.colour = None
+            for i in range(4):
+                self.children.append(Block(child_pos[i],
+                                           self._child_size(),
+                                           random.choice(COLOUR_LIST),
+                                           self.level + 1,
+                                           self.max_depth))
+            for child in self.children:
+                if child.smashable():
+                    child.smash()
+            return True
+        else:
+            return False
 
     def swap(self, direction: int) -> bool:
         """Swap the child Blocks of this Block.
 
         If this Block has no children, do nothing. Otherwise, if <direction> is
         1, swap vertically. If <direction> is 0, swap horizontally.
-        
+
         Return True iff the swap was performed.
 
         Precondition: <direction> is either 0 or 1
         """
-        # TODO: Implement me
-        return True  # FIXME
+        if not self.children:
+            return False
+        else:
+            # Vertical swap
+            if direction == 1:
+                self.children[1], self.children[2] = self.children[2], \
+                                                     self.children[1]
+                self.children[0], self.children[3] = self.children[3], \
+                                                     self.children[0]
+            # Horizontal swap
+            else:
+                self.children[1], self.children[0] = self.children[0], \
+                                                     self.children[1]
+                self.children[2], self.children[3] = self.children[3], \
+                                                     self.children[2]
+            self._update_children_positions(self.position)
+            return True
 
     def rotate(self, direction: int) -> bool:
         """Rotate this Block and all its descendants.
 
         If this Block has no children, do nothing. If <direction> is 1, rotate
         clockwise. If <direction> is 3, rotate counter-clockwise.
-        
+
         Return True iff the rotate was performed.
 
         Precondition: <direction> is either 1 or 3.
         """
-        # TODO: Implement me
-        return True  # FIXME
+        # Base Case: unit block, cannot be rotated
+        if not self.children:
+            return False
+        # Recursive step
+        else:
+            # Counter-Clockwise rotation
+            if direction == 3:
+                self.children[1], self.children[3] = self.children[3], \
+                                                     self.children[1]
+                self.swap(0)
+                for child in self.children:
+                    child.rotate(3)
+            # Clockwise rotation
+            else:
+                self.children[0], self.children[2] = self.children[2], \
+                                                     self.children[0]
+                self.swap(0)
+                for child in self.children:
+                    child.rotate(1)
+            return True
 
     def paint(self, colour: Tuple[int, int, int]) -> bool:
         """Change this Block's colour iff it is a leaf at a level of max_depth
@@ -263,8 +301,15 @@ class Block:
 
         Return True iff this Block's colour was changed.
         """
-        # TODO: Implement me
-        return True  # FIXME
+        # Both conditions should hold
+        if not self.children and self.level == self.max_depth:
+            if self.colour != colour:
+                self.colour = colour
+                return True
+            else:
+                return False
+        else:
+            return False
 
     def combine(self) -> bool:
         """Turn this Block into a leaf based on the majority colour of its
@@ -279,16 +324,33 @@ class Block:
 
         Return True iff this Block was turned into a leaf node.
         """
-        # TODO: Implement me
-        return True  # FIXME
+        if self.level == (self.max_depth - 1) and len(self.children) != 0:
+            cols_lst = [c.colour for c in self.children]
+            cols = set(cols_lst)
+            # No majority colour
+            if len(cols) == (4 or 2):
+                return False
+            else:
+                self.colour = max(cols, key=cols_lst.count)
+                self.children = []
+                return True
+        else:
+            return False
 
     def create_copy(self) -> Block:
         """Return a new Block that is a deep copy of this Block.
 
         Remember that a deep copy has new blocks (not aliases) at every level.
         """
-        # TODO: Implement me
-        pass  # FIXME
+        copy_block = Block(self.position, self.size,
+                           self.colour, self.level,
+                           self.max_depth)
+        if not self.children:
+            return copy_block
+        else:
+            for child in self.children:
+                copy_block.children.append(child.create_copy())
+            return copy_block
 
 
 if __name__ == '__main__':
