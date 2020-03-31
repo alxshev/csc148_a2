@@ -399,6 +399,9 @@ class SmartPlayer(Player):
             if self.goal.score(board) < max_score:
                 self._proceed = False
                 return _create_move(valid_movs[ind][0], board)
+            else:
+                self._proceed = False
+                return _create_move(PASS, board)
 
 
 if __name__ == '__main__':
